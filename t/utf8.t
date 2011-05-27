@@ -7,9 +7,51 @@ use utf8;
 
 use Test::More 'no_plan';
 use URI;
+use URI::QueryParam;
+use Encode qw/encode_utf8/;
 
-is(URI->new('http://foobar/mooi€e')->as_string, 'http://foobar/mooi%E2%82%ACe');
+my $u;
 
-my $uri = URI->new('http:');
-$uri->query_form("mooi€e" => "mooi€e");
-is( $uri->query, "mooi%E2%82%ACe=mooi%E2%82%ACe" );
+$u = URI->new('http://foobar/mooi€e');
+is $u->as_string, 'http://foobar/mooi%E2%82%ACe';
+ok !utf8::is_utf8($u->as_string);
+
+$u = URI->new(encode_utf8('http://foobar/mooi€e'));
+is $u->as_string, 'http://foobar/mooi%E2%82%ACe';
+ok !utf8::is_utf8($u->as_string);
+
+$u = URI->new('http:');
+$u->query_form("mooi€e" => "mooi€e");
+is $u->query, "mooi%E2%82%ACe=mooi%E2%82%ACe";
+is scalar $u->query_param("mooi€e"), encode_utf8("mooi€e");
+is scalar $u->query_param(encode_utf8("mooi€e")), encode_utf8("mooi€e");
+ok !utf8::is_utf8(scalar $u->query_param(encode_utf8("mooi€e")));
+
+$u = URI->new('http:');
+$u->query_form(encode_utf8("mooi€e") => "mooi€e");
+is $u->query, "mooi%E2%82%ACe=mooi%E2%82%ACe";
+is scalar $u->query_param("mooi€e"), encode_utf8("mooi€e");
+is scalar $u->query_param(encode_utf8("mooi€e")), encode_utf8("mooi€e");
+ok !utf8::is_utf8(scalar $u->query_param(encode_utf8("mooi€e")));
+
+$u = URI->new('http:');
+$u->query_form("mooi€e" => encode_utf8("mooi€e"));
+is $u->query, "mooi%E2%82%ACe=mooi%E2%82%ACe";
+is scalar $u->query_param("mooi€e"), encode_utf8("mooi€e");
+is scalar $u->query_param(encode_utf8("mooi€e")), encode_utf8("mooi€e");
+ok !utf8::is_utf8(scalar $u->query_param(encode_utf8("mooi€e")));
+
+$u = URI->new('http:');
+$u->query_form(encode_utf8("mooi€e") => encode_utf8("mooi€e"));
+is $u->query, "mooi%E2%82%ACe=mooi%E2%82%ACe";
+is scalar $u->query_param("mooi€e"), encode_utf8("mooi€e");
+is scalar $u->query_param(encode_utf8("mooi€e")), encode_utf8("mooi€e");
+ok !utf8::is_utf8(scalar $u->query_param(encode_utf8("mooi€e")));
+
+$u = URI->new('http://mooi€e.org/');
+is $u->as_string, 'http://xn--mooie-9l4b.org/';
+ok !utf8::is_utf8('http://xn--mooie-9l4b.org/');
+
+$u = URI->new(encode_utf8('http://mooi€e.org/'));
+is $u->as_string, 'http://xn--mooie-9l4b.org/';
+ok !utf8::is_utf8('http://xn--mooie-9l4b.org/');
