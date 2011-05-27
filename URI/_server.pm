@@ -22,7 +22,14 @@ sub _host_escape {
     return unless $_[0] =~ /[^URI::uric]/;
     eval {
 	require URI::_idna;
-	$_[0] = URI::_idna::encode($_[0]);
+	if ($URI::COERCE_OCTETS) {
+	    utf8::decode($_[0]) unless utf8::is_utf8($_[0]);
+	    $_[0] = URI::_idna::encode($_[0]);
+	    utf8::encode($_[0]) if utf8::is_utf8($_[0]);
+	}
+	else {
+	    $_[0] = URI::_idna::encode($_[0]);
+	}
     };
     return 0 if $@;
     return 1;

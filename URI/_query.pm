@@ -14,6 +14,7 @@ sub query
 	$$self = $1;
 	if (defined $q) {
 	    $q =~ s/([^$URI::uric])/ URI::Escape::escape_char($1)/ego;
+	    utf8::encode($q) if $URI::COERCE_OCTETS && utf8::is_utf8($q);
 	    $$self .= "?$q";
 	}
 	$$self .= $3;
@@ -44,16 +45,21 @@ sub query_form {
             $key = '' unless defined $key;
 	    $key =~ s/([;\/?:@&=+,\$\[\]%])/ URI::Escape::escape_char($1)/eg;
 	    $key =~ s/ /+/g;
+	    utf8::encode($key) if $URI::COERCE_OCTETS && utf8::is_utf8($key);
 	    $vals = [ref($vals) eq "ARRAY" ? @$vals : $vals];
             for my $val (@$vals) {
                 $val = '' unless defined $val;
 		$val =~ s/([;\/?:@&=+,\$\[\]%])/ URI::Escape::escape_char($1)/eg;
                 $val =~ s/ /+/g;
+                utf8::encode($val) if $URI::COERCE_OCTETS && utf8::is_utf8($val);
                 push(@query, "$key=$val");
             }
         }
         if (@query) {
-            unless ($delim) {
+            if ($delim) {
+                utf8::encode($delim) if $URI::COERCE_OCTETS && utf8::is_utf8($delim);
+            }
+            else {
                 $delim = $1 if $old && $old =~ /([&;])/;
                 $delim ||= $URI::DEFAULT_QUERY_FORM_DELIMITER || "&";
             }
@@ -78,7 +84,10 @@ sub query_keywords
         # Try to set query string
 	my @copy = @_;
 	@copy = @{$copy[0]} if @copy == 1 && ref($copy[0]) eq "ARRAY";
-	for (@copy) { s/([;\/?:@&=+,\$\[\]%])/ URI::Escape::escape_char($1)/eg; }
+	for (@copy) {
+	    s/([;\/?:@&=+,\$\[\]%])/ URI::Escape::escape_char($1)/eg;
+	    utf8::encode($_) if $URI::COERCE_OCTETS && utf8::is_utf8($_);
+	}
 	$self->query(@copy ? join('+', @copy) : undef);
     }
     return if !defined($old) || !defined(wantarray);

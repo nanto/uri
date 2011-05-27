@@ -19,6 +19,8 @@ sub URI::_query::query_param {
     my $key = shift;
     my @i;
 
+    utf8::encode($key) if $URI::COERCE_OCTETS && utf8::is_utf8($key);
+
     for (my $i = 0; $i < @old; $i += 2) {
 	push(@i, $i) if $old[$i] eq $key;
     }
@@ -60,6 +62,8 @@ sub URI::_query::query_param_delete {
     my $key = shift;
     my @old = $self->query_form;
     my @vals;
+
+    utf8::encode($key) if $URI::COERCE_OCTETS && utf8::is_utf8($key);
 
     for (my $i = @old - 2; $i >= 0; $i -= 2) {
 	next if $old[$i] ne $key;
