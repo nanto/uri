@@ -50,8 +50,8 @@ ok !utf8::is_utf8(scalar $u->query_param(encode_utf8("mooi€e")));
 
 $u = URI->new('http://mooi€e.org/');
 is $u->as_string, 'http://xn--mooie-9l4b.org/';
-ok !utf8::is_utf8('http://xn--mooie-9l4b.org/');
+ok !utf8::is_utf8($u->as_string);
 
 $u = URI->new(encode_utf8('http://mooi€e.org/'));
 is $u->as_string, 'http://xn--mooie-9l4b.org/';
-ok !utf8::is_utf8('http://xn--mooie-9l4b.org/');
+ok !utf8::is_utf8($u->as_string);
