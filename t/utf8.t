@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 28;
+use Test::More tests => 34;
 use URI;
 use URI::QueryParam;
 use Encode qw/encode_utf8/;
@@ -65,3 +65,18 @@ $u = URI->new('http:');
 $u->host(encode_utf8('mooi€e.org'));
 is $u->host, 'xn--mooie-9l4b.org';
 ok !utf8::is_utf8($u->host);
+
+$u = URI->new('urn:');
+$u->opaque('mooi€e');
+is $u->opaque, 'mooi%E2%82%ACe';
+ok !utf8::is_utf8($u->opaque);
+
+$u = URI->new('http:');
+$u->fragment('mooi€e');
+is $u->fragment, 'mooi%E2%82%ACe';
+ok !utf8::is_utf8($u->fragment);
+
+$u = URI->new('http://example.org/');
+$u->path_segments('mooi€e', encode_utf8('mooi€e'), ['mooi€e', encode_utf8('mooi€e')]);
+is $u->path, '/mooi%E2%82%ACe/mooi%E2%82%ACe/mooi%E2%82%ACe;mooi%E2%82%ACe';
+ok !utf8::is_utf8($u->path);
