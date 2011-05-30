@@ -4,6 +4,7 @@ require URI::_query;
 @ISA=qw(URI URI::_query);
 
 use strict;
+use Encode ();
 use URI::Escape qw(uri_unescape);
 use Carp ();
 
@@ -22,6 +23,7 @@ sub authority
 	$$self = $1;
 	my $rest = $3;
 	if (defined $auth) {
+	    Encode::_utf8_off($auth) if $URI::COERCE_OCTETS;
 	    $auth =~ s/([^$ACHAR])/ URI::Escape::escape_char($1)/ego;
 	    $$self .= "//$auth";
 	}
@@ -41,6 +43,7 @@ sub path
 	my $rest = $3;
 	my $new_path = shift;
 	$new_path = "" unless defined $new_path;
+	Encode::_utf8_off($new_path) if $URI::COERCE_OCTETS;
 	$new_path =~ s/([^$PCHAR])/ URI::Escape::escape_char($1)/ego;
 	_check_path($new_path, $$self);
 	$$self .= $new_path . $rest;
@@ -58,6 +61,7 @@ sub path_query
 	my $rest = $3;
 	my $new_path = shift;
 	$new_path = "" unless defined $new_path;
+	Encode::_utf8_off($new_path) if $URI::COERCE_OCTETS;
 	$new_path =~ s/([^$URI::uric])/ URI::Escape::escape_char($1)/ego;
 	_check_path($new_path, $$self);
 	$$self .= $new_path . $rest;
@@ -96,11 +100,15 @@ sub path_segments
 	    if (ref($_)) {
 		my @seg = @$_;
 		$seg[0] =~ s/%/%25/g;
-		for (@seg) { s/;/%3B/g; }
+		for (@seg) {
+		    Encode::_utf8_off($_) if $URI::COERCE_OCTETS;
+		    s/;/%3B/g;
+		}
 		$_ = join(";", @seg);
 	    }
 	    else {
-		 s/%/%25/g; s/;/%3B/g;
+		Encode::_utf8_off($_) if $URI::COERCE_OCTETS;
+		s/%/%25/g; s/;/%3B/g;
 	    }
 	    s,/,%2F,g;
 	}

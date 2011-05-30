@@ -1,6 +1,8 @@
 package URI::QueryParam;
 
 use strict;
+use URI ();
+use Encode ();
 
 sub URI::_query::query_param {
     my $self = shift;
@@ -18,6 +20,8 @@ sub URI::_query::query_param {
 
     my $key = shift;
     my @i;
+
+    Encode::_utf8_off($key) if $URI::COERCE_OCTETS;
 
     for (my $i = 0; $i < @old; $i += 2) {
 	push(@i, $i) if $old[$i] eq $key;
@@ -60,6 +64,8 @@ sub URI::_query::query_param_delete {
     my $key = shift;
     my @old = $self->query_form;
     my @vals;
+
+    Encode::_utf8_off($key) if $URI::COERCE_OCTETS;
 
     for (my $i = @old - 2; $i >= 0; $i -= 2) {
 	next if $old[$i] ne $key;

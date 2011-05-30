@@ -4,7 +4,8 @@ use strict;
 use vars qw($VERSION);
 $VERSION = "1.58";
 
-use vars qw($ABS_REMOTE_LEADING_DOTS $ABS_ALLOW_RELATIVE_SCHEME $DEFAULT_QUERY_FORM_DELIMITER);
+use vars qw($ABS_REMOTE_LEADING_DOTS $ABS_ALLOW_RELATIVE_SCHEME $DEFAULT_QUERY_FORM_DELIMITER $COERCE_OCTETS);
+$COERCE_OCTETS = 1;
 
 my %implements;  # mapping from scheme to implementor class
 
@@ -19,6 +20,7 @@ $uric       = quotemeta($reserved) . $unreserved . "%";
 $scheme_re  = '[a-zA-Z][a-zA-Z0-9.+\-]*';
 
 use Carp ();
+use Encode ();
 use URI::Escape ();
 
 use overload ('""'     => sub { ${$_[0]} },
@@ -77,10 +79,13 @@ sub _init
 {
     my $class = shift;
     my($str, $scheme) = @_;
+    Encode::_utf8_off($str) if $URI::COERCE_OCTETS;
     # find all funny characters and encode the bytes.
     $str = $class->_uric_escape($str);
-    $str = "$scheme:$str" unless $str =~ /^$scheme_re:/o ||
-                                 $class->_no_scheme_ok;
+    unless ($str =~ /^$scheme_re:/o || $class->_no_scheme_ok) {
+        Encode::_utf8_off($scheme) if $URI::COERCE_OCTETS;
+        $str = "$scheme:$str";
+    }
     my $self = bless \$str, $class;
     $self;
 }
@@ -217,6 +222,7 @@ sub opaque
 
     my $new_opaque = shift;
     $new_opaque = "" unless defined $new_opaque;
+    Encode::_utf8_off($new_opaque) if $URI::COERCE_OCTETS;
     $new_opaque =~ s/([^$uric])/ URI::Escape::escape_char($1)/ego;
 
     $$self = defined($old_scheme) ? $old_scheme : "";
@@ -242,6 +248,7 @@ sub fragment
 
     my $new_frag = shift;
     if (defined $new_frag) {
+	Encode::_utf8_off($new_frag) if $URI::COERCE_OCTETS;
 	$new_frag =~ s/([^$uric])/ URI::Escape::escape_char($1) /ego;
 	$$self .= "#$new_frag";
     }
@@ -268,7 +275,6 @@ sub as_iri
 	# doesn't work before Encode 2.39.  Wait for a standard release
 	# to bundle that version.
 
-	require Encode;
 	my $enc = Encode::find_encoding("UTF-8");
 	my $u = "";
 	while (length $str) {

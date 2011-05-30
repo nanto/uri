@@ -3,6 +3,8 @@ require URI::_generic;
 @ISA=qw(URI::_generic);
 
 use strict;
+use URI ();
+use Encode ();
 use URI::Escape qw(uri_unescape);
 
 sub _uric_escape {
@@ -20,6 +22,16 @@ sub _uric_escape {
 
 sub _host_escape {
     return unless $_[0] =~ /[^URI::uric]/;
+    if ($URI::COERCE_OCTETS) {
+	eval {
+	    require URI::_idna;
+	    # don't encode invalid UTF-8 octets in Punycode
+	    my $host = Encode::decode_utf8($_[0], Encode::FB_CROAK | Encode::LEAVE_SRC);
+	    $_[0] = URI::_idna::encode($host);
+	    Encode::_utf8_off($_[0]);
+	};
+	return !$@;
+    }
     eval {
 	require URI::_idna;
 	$_[0] = URI::_idna::encode($_[0]);
@@ -75,6 +87,7 @@ sub host
 	my $port = ($tmp =~ /(:\d+)$/) ? $1 : "";
 	my $new = shift;
 	$new = "" unless defined $new;
+	Encode::_utf8_off($new) if $URI::COERCE_OCTETS;
 	if (length $new) {
 	    $new =~ s/[@]/%40/g;   # protect @
 	    if ($new =~ /^[^:]*:\d*\z/ || $new =~ /]:\d*\z/) {
