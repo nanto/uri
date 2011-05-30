@@ -6,7 +6,7 @@ use Test::More;
 use Config;
 
 if (defined $Config{useperlio}) {
-    plan tests=>26;
+    plan tests=>27;
 } else {
     plan skip_all=>'this perl doesn\'t support PerlIO layers';
 }
@@ -41,8 +41,12 @@ is $u->as_string, "http://example.com/Bücher";
 is $u->as_iri, "http://example.com/Bücher";
 
 # draft-duerst-iri-bis.txt claims this should map to xn--rsum-bad.example.org
-$u = URI->new("http://r\xE9sum\xE9.example.org");
+$u = URI->new("http://résumé.example.org");
 is $u->as_string, "http://xn--rsum-bpad.example.org";
+
+# octets that are invalid as UTF-8 are not encoded in Punycode
+$u = URI->new("http://r\xE9sum\xE9.example.org");
+is $u->as_string, "http://r%E9sum%E9.example.org";
 
 $u = URI->new("http://xn--rsum-bad.example.org");
 is $u->as_iri, "http://r\x80sum\x80.example.org";
