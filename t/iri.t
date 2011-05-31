@@ -6,7 +6,7 @@ use Test::More;
 use Config;
 
 if (defined $Config{useperlio}) {
-    plan tests=>27;
+    plan tests=>29;
 } else {
     plan skip_all=>'this perl doesn\'t support PerlIO layers';
 }
@@ -54,6 +54,12 @@ is $u->as_iri, "http://r\x80sum\x80.example.org";
 $u = URI->new("http://r%C3%A9sum%C3%A9.example.org");
 is $u->as_string, "http://r%C3%A9sum%C3%A9.example.org";
 is $u->as_iri, "http://r\xE9sum\xE9.example.org";
+
+# ihost should accept Latin-1 string
+$u = URI->new('http://example.org/');
+$u->ihost("r\xE9sum\xE9.example.org");
+is $u->host, "xn--rsum-bpad.example.org";
+is $u->ihost, "résumé.example.org";
 
 $u = URI->new("http://➡.ws/");
 is $u, "http://xn--hgi.ws/";

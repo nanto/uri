@@ -109,7 +109,15 @@ sub host
 sub ihost
 {
     my $self = shift;
-    my $old = $self->host(@_);
+    my $old;
+    if (@_) {
+	my $host = shift;
+	utf8::upgrade($host) if defined $host;
+	$old = $self->host($host);
+    }
+    else {
+	$old = $self->host;
+    }
     if ($old =~ /(^|\.)xn--/) {
 	require URI::_idna;
 	$old = URI::_idna::decode($old);
